@@ -34,3 +34,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Cloudflare must install with npm from package-lock.json
+bun.lockb
+bun.lock
