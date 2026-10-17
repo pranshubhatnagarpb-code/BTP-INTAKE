@@ -4,4 +4,13 @@
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "pages_build_output_dir": "dist",
+  // Public Supabase settings (URL + publishable key are safe to commit). Used at
+  // build time (VITE_*) and at runtime by the server. The service key is NOT
+  // here: add INTAKE_SUPABASE_SERVICE_KEY as a Secret in the Cloudflare dashboard.
+  "vars": {
+    "VITE_SUPABASE_URL": "https://ferfjikgycinziceawbt.supabase.co",
+    "VITE_SUPABASE_ANON_KEY": "sb_publishable_xkaqdNZIiEhAgQ0SlfICZw_RI8Vzlhb",
+    "SUPABASE_URL": "https://ferfjikgycinziceawbt.supabase.co",
+    "SUPABASE_ANON_KEY": "sb_publishable_xkaqdNZIiEhAgQ0SlfICZw_RI8Vzlhb",
+  },
 }
