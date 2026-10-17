@@ -63,39 +63,39 @@
 
 :root {
   --radius: 0.875rem;
-  /* MKR Clinic — teal (#00a896) brand palette */
-  --background: oklch(0.984 0.006 140);
+  /* Bounce The Pound — teal (#42756F) brand palette */
+  --background: oklch(0.984 0.006 186);
   --foreground: oklch(0.22 0.020 248);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.22 0.020 248);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.22 0.020 248);
-  --primary: oklch(0.62 0.12 187);
-  --primary-foreground: oklch(0.99 0.005 140);
-  --secondary: oklch(0.94 0.030 187);
-  --secondary-foreground: oklch(0.30 0.060 187);
-  --muted: oklch(0.955 0.010 140);
+  --primary: oklch(0.525 0.056 186);
+  --primary-foreground: oklch(0.99 0.005 186);
+  --secondary: oklch(0.94 0.030 186);
+  --secondary-foreground: oklch(0.30 0.045 186);
+  --muted: oklch(0.955 0.010 186);
   --muted-foreground: oklch(0.50 0.016 248);
-  --accent: oklch(0.88 0.055 187);
-  --accent-foreground: oklch(0.28 0.060 187);
+  --accent: oklch(0.88 0.045 186);
+  --accent-foreground: oklch(0.28 0.045 186);
   --destructive: oklch(0.58 0.2 27);
-  --destructive-foreground: oklch(0.99 0.005 140);
-  --border: oklch(0.90 0.018 187);
-  --input: oklch(0.90 0.018 187);
-  --ring: oklch(0.62 0.12 187);
-  --chart-1: oklch(0.62 0.12 187);
+  --destructive-foreground: oklch(0.99 0.005 186);
+  --border: oklch(0.90 0.018 186);
+  --input: oklch(0.90 0.018 186);
+  --ring: oklch(0.525 0.056 186);
+  --chart-1: oklch(0.525 0.056 186);
   --chart-2: oklch(0.70 0.09 95);
   --chart-3: oklch(0.60 0.10 50);
   --chart-4: oklch(0.55 0.08 220);
   --chart-5: oklch(0.65 0.12 320);
-  --sidebar: oklch(0.97 0.012 140);
+  --sidebar: oklch(0.97 0.012 186);
   --sidebar-foreground: oklch(0.22 0.020 248);
-  --sidebar-primary: oklch(0.62 0.12 187);
-  --sidebar-primary-foreground: oklch(0.99 0.005 140);
-  --sidebar-accent: oklch(0.94 0.030 187);
-  --sidebar-accent-foreground: oklch(0.30 0.060 187);
-  --sidebar-border: oklch(0.90 0.018 187);
-  --sidebar-ring: oklch(0.62 0.12 187);
+  --sidebar-primary: oklch(0.525 0.056 186);
+  --sidebar-primary-foreground: oklch(0.99 0.005 186);
+  --sidebar-accent: oklch(0.94 0.030 186);
+  --sidebar-accent-foreground: oklch(0.30 0.045 186);
+  --sidebar-border: oklch(0.90 0.018 186);
+  --sidebar-ring: oklch(0.525 0.056 186);
 }
 
 .dark {

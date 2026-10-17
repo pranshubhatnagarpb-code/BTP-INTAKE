@@ -1,16 +1,16 @@
 {
-  "name": "MKR Clinic - Client Intake Form",
-  "short_name": "MKR Clinic",
-  "description": "Personalised nutrition intake by Dr. Malika Kabra Rathi.",
+  "name": "Bounce The Pound - Assessment Form",
+  "short_name": "Bounce The Pound",
+  "description": "Sustainable weight-loss assessment form for the Bounce The Pound team.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#ffffff",
+  "theme_color": "#42756F",
   "icons": [
     {
-      "src": "/icon.svg",
+      "src": "/icon.png",
       "sizes": "any",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]

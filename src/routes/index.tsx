@@ -4,15 +4,15 @@ import { IntakeWizard } from "@/components/intake/Wizard";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "MKR Clinic - Client Intake Form" },
+      { title: "Bounce The Pound - Assessment Form" },
       {
         name: "description",
-        content: "A private intake form to prepare your personalised nutrition consultation with Dr. Malika Kabra Rathi.",
+        content: "A private assessment form to prepare your sustainable weight-loss consultation with the Bounce The Pound team.",
       },
-      { property: "og:title", content: "MKR Clinic - Client Intake Form" },
+      { property: "og:title", content: "Bounce The Pound - Assessment Form" },
       {
         property: "og:description",
-        content: "Start your personalised nutrition plan in a few thoughtful steps.",
+        content: "Start your sustainable weight-loss plan in a few thoughtful steps.",
       },
     ],
   }),

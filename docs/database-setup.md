@@ -1,12 +1,21 @@
 # Database setup
 
-You connected this intake project to your existing Supabase project
-(`zkmfghujpmpggnzfkyvw`). Run the SQL below **once** in that project's
-SQL editor (Supabase Dashboard → SQL Editor → New query):
+This intake project shares its Supabase project with **Bounce_the_pound_pms**
+(`ferfjikgycinziceawbt`) — the same project that backs the PMS app's `clients`
+table. The submit path (`src/lib/intake.functions.ts`) writes an audit row to
+`intake_submissions` and then upserts directly into `clients`, so both tables
+must exist in that one project.
+
+The full schema (both `clients` and `intake_submissions`, plus everything
+else the PMS app needs) lives in
+`Bounce_the_pound_pms/supabase/migrations/20260903000000_bounce_the_pound_baseline_and_intake.sql`.
+Run **that file only** once in the Supabase SQL editor for the
+`ferfjikgycinziceawbt` project — it supersedes every other file in that
+folder (see the comment at the top of that migration for why).
+
+The `intake_submissions` table it creates:
 
 ```sql
-create extension if not exists "pgcrypto";
-
 create table if not exists public.intake_submissions (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz not null default now(),
@@ -40,25 +49,20 @@ create table if not exists public.intake_submissions (
     or (guardian_phone is not null and char_length(guardian_phone) > 0)
   )
 );
-
-create index if not exists intake_submissions_created_at_idx
-  on public.intake_submissions (created_at desc);
-create index if not exists intake_submissions_pms_status_idx
-  on public.intake_submissions (pms_status);
-create index if not exists intake_submissions_phone_idx
-  on public.intake_submissions (phone);
-create index if not exists intake_submissions_email_idx
-  on public.intake_submissions (email);
-
-alter table public.intake_submissions enable row level security;
-
-drop policy if exists "anon insert intake" on public.intake_submissions;
-create policy "anon insert intake"
-  on public.intake_submissions
-  for insert
-  to anon, authenticated
-  with check (true);
 ```
+
+`upsertClient()` in `intake.functions.ts` maps a subset of the intake payload
+onto `clients` columns (name, date_of_birth, address, gender, weight, height,
+goal, diet_preference, health_conditions, phone, email) — see the `GOAL_MAP`
+/ `DIET_PREFERENCE_MAP` tables in that file for how the intake form's enums
+translate to the PMS's option lists. Everything else the form collects
+(symptoms, lifestyle, detailed medical history, etc.) has no matching PMS
+column, so it's kept in `intake_submissions.payload` and viewable from the
+Clients page via the eye icon next to each client's name.
+
+RLS on `intake_submissions` only allows `authenticated` (PMS staff) to
+`SELECT`; the intake form's own inserts go through the service-role key
+below and bypass RLS entirely, so no `anon` policy is needed.
 
 ## Required secrets (set in this Lovable project)
 
@@ -68,6 +72,7 @@ These are server-only and must NOT have a `VITE_` prefix:
   Needed so the server can update `pms_lead_id`, `pms_status`, etc. on the
   submission row after forwarding to the PMS. (Without it, inserts still
   succeed via the anon role but sync columns won't update.)
-- `PMS_EDGE_URL` — full URL of your PMS Supabase Edge Function.
-- `PMS_EDGE_KEY` — bearer token your edge function will validate.
+- `PMS_EDGE_URL` / `PMS_EDGE_KEY` — only used by the legacy curl-testable
+  mirror route (`src/routes/api/public/intake.ts`), not by the main submit
+  path. Bounce The Pound has no such edge function, so these are left blank.
 - `ADMIN_RETRY_TOKEN` — random token to authorize manual retries.

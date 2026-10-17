@@ -8,8 +8,40 @@ export type SubmitIntakeResult = {
 };
 
 // ---------------------------------------------------------------------------
+// Maps the intake form's richer enums onto Bounce The Pound's clients.goal /
+// clients.diet_preference options (see src/components/clients/ClientFormDialog.tsx
+// in Bounce_the_pound_pms for the exact option lists). Anything without a close
+// match falls into the nearest general bucket — the original value is never
+// lost, since the full payload is stored in intake_submissions either way.
+// ---------------------------------------------------------------------------
+const GOAL_MAP: Record<string, string> = {
+  weight_loss: "weight_loss",
+  fat_loss: "weight_loss",
+  weight_gain: "weight_gain",
+  muscle_gain: "muscle_building",
+  sports_performance: "muscle_building",
+  energy: "maintain",
+  general_wellness: "maintain",
+  gut_health: "disease_management",
+  hormonal_balance: "disease_management",
+  manage_medical_condition: "disease_management",
+};
+
+const DIET_PREFERENCE_MAP: Record<string, string> = {
+  veg: "vegetarian",
+  jain: "vegetarian",
+  non_veg: "non-vegetarian",
+  pescatarian: "non-vegetarian",
+  eggetarian: "eggetarian",
+  vegan: "vegan",
+};
+
+// ---------------------------------------------------------------------------
 // Creates or updates a client record in the shared PMS database.
-// Maps all intake fields to their corresponding clients table columns.
+// Maps only the intake fields that have a matching clients table column;
+// everything else (symptoms, lifestyle, medical history detail, etc.) is
+// preserved in the intake_submissions.payload row for the Clients page
+// "view full intake response" eye icon.
 // ---------------------------------------------------------------------------
 async function upsertClient(input: SubmissionInput, submissionId: string): Promise<string | null> {
   const isChild = input.branch === "child";
@@ -43,32 +75,33 @@ async function upsertClient(input: SubmissionInput, submissionId: string): Promi
     if (data) existingId = data.id as string;
   }
 
-  // Safely access optional section (union type, cast to any)
+  // Safely access optional/branch sections (union type, cast to any)
   const opt = (input as any).optional as Record<string, any> | undefined;
+  const child = (input as any).child as Record<string, any> | undefined;
+
+  const gender = isChild ? child?.gender ?? null : input.branch;
+  const address = [opt?.address, input.required.city].filter(Boolean).join(", ") || null;
 
   const payload: Record<string, unknown> = {
     name: input.required.fullName,
     date_of_birth: input.required.dob ?? null,
-    age: input.required.age ?? null,
-    address: input.required.city ?? null,
-    gender: isChild ? null : input.branch,
+    address,
+    gender,
     weight: input.required.body.weightKg,
     height: input.required.body.heightCm,
-    goal: input.required.primaryGoal,
-    chief_complaints: input.required.chiefComplaints,
-    updated_at: new Date().toISOString(),
+    // clients.goal holds one value — use the first goal picked
+    goal: GOAL_MAP[input.required.primaryGoals?.[0] ?? input.required.primaryGoal ?? ""] ?? null,
   };
 
   if (normalizedPhone) payload.phone = normalizedPhone;
   if (normalizedEmail) payload.email = normalizedEmail;
 
   // Optional fields — only set if provided, never overwrite with null
-  if (opt?.foodPattern?.dietType) payload.diet_preference = opt.foodPattern.dietType;
+  if (opt?.foodPattern?.dietType) {
+    payload.diet_preference = DIET_PREFERENCE_MAP[opt.foodPattern.dietType] ?? null;
+  }
   if (Array.isArray(opt?.medicalHistory) && opt.medicalHistory.length > 0) {
     payload.health_conditions = opt.medicalHistory;
-  }
-  if (Array.isArray(opt?.familyHistory) && opt.familyHistory.length > 0) {
-    payload.family_history = opt.familyHistory;
   }
 
   if (existingId) {

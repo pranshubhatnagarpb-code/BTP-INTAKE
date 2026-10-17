@@ -31,38 +31,52 @@ const symptomSnapshot = z.object({
 const lifestyleQuick = z.object({
   sleepHours: z.number().min(3).max(14),
   waterIntake: z.enum(["<1L", "1-2L", "2-3L", "3L+"]),
-  activityLevel: z.enum(["sedentary", "light", "moderate", "active", "very_active"]),
+  // no longer asked (client review, Oct 2026) — kept for older submissions
+  activityLevel: z.enum(["sedentary", "light", "moderate", "active", "very_active"]).optional(),
 });
+
+const goalEnum = z.enum([
+  "weight_loss",
+  "fat_loss",
+  "weight_gain",
+  "muscle_gain",
+  "energy",
+  "gut_health",
+  "hormonal_balance",
+  "sports_performance",
+  "manage_medical_condition",
+  "general_wellness",
+]);
 
 const bodySnapshot = z.object({
   weightKg: z.number().min(2).max(400),
   heightCm: z.number().min(40).max(250),
+  // As entered (current form asks feet + inches); heightCm is derived from these.
+  heightFt: z.number().int().min(1).max(8).optional(),
+  heightIn: z.number().int().min(0).max(11).optional(),
 });
 
 // ---------- required core (all branches) ----------
-const requiredCore = z.object({
-  fullName: z.string().trim().min(1).max(120),
-  dob: z.string().date().optional(),
-  age: z.number().int().min(0).max(120).optional(),
-  city: z.string().trim().min(1).max(120),
-  consent: z.literal(true),
-  primaryGoal: z.enum([
-    "weight_loss",
-    "fat_loss",
-    "weight_gain",
-    "muscle_gain",
-    "energy",
-    "gut_health",
-    "hormonal_balance",
-    "sports_performance",
-    "manage_medical_condition",
-    "general_wellness",
-  ]),
-  chiefComplaints: z.array(z.string().min(1).max(60)).min(1).max(3),
-  body: bodySnapshot,
-  lifestyle: lifestyleQuick,
-  symptoms: symptomSnapshot,
-});
+const requiredCore = z
+  .object({
+    fullName: z.string().trim().min(1).max(120),
+    dob: z.string().date().optional(),
+    age: z.number().int().min(0).max(120).optional(),
+    city: z.string().trim().min(1).max(120),
+    // consent checkbox removed from the form — kept for older submissions
+    consent: z.literal(true).optional(),
+    // single goal (older submissions) or multiple goals (current form)
+    primaryGoal: goalEnum.optional(),
+    primaryGoals: z.array(goalEnum).min(1).max(10).optional(),
+    chiefComplaints: z.array(z.string().min(1).max(60)).min(1).max(20),
+    body: bodySnapshot,
+    lifestyle: lifestyleQuick,
+    symptoms: symptomSnapshot,
+  })
+  .refine((v) => Boolean(v.primaryGoal || v.primaryGoals?.length), {
+    message: "Pick at least one goal",
+    path: ["primaryGoals"],
+  });
 
 // ---------- optional sections (all branches) ----------
 const mealSlot = z.object({
@@ -73,7 +87,25 @@ const mealSlot = z.object({
 const optionalCommon = z
   .object({
     address: z.string().max(300).optional(),
+    // flat list of conditions — older submissions; current form sends medicalConditions
     medicalHistory: z.array(z.string().max(60)).max(30).optional(),
+    // Medical history table from the BTP assessment form.
+    medicalConditions: z
+      .object({
+        heart: z.array(z.string().max(40)).max(6).optional(),
+        heartOther: z.string().max(120).optional(),
+        diabetes: z.array(z.string().max(40)).max(6).optional(),
+        pcos: z.array(z.string().max(60)).max(6).optional(),
+        lastMenstrualPeriod: z.string().date().optional(),
+        thyroid: z.array(z.string().max(40)).max(4).optional(),
+        kidney: z.array(z.string().max(40)).max(6).optional(),
+        kidneyOther: z.string().max(120).optional(),
+        chronicIllnessOrSurgery: z.string().max(400).optional(),
+        orthopedicAilment: z.string().max(400).optional(),
+        gut: z.array(z.string().max(60)).max(8).optional(),
+        gutOther: z.string().max(120).optional(),
+      })
+      .optional(),
     familyHistory: z.array(z.string().max(60)).max(30).optional(),
     medications: z
       .array(
@@ -92,7 +124,16 @@ const optionalCommon = z
         type: z.string().max(120).optional(),
         diagnosisDate: z.string().date().optional(),
         treatment: z
-          .array(z.enum(["chemotherapy", "radiation", "immunotherapy", "surgery", "bone_marrow_transplant", "other"]))
+          .array(
+            z.enum([
+              "chemotherapy",
+              "radiation",
+              "immunotherapy",
+              "surgery",
+              "bone_marrow_transplant",
+              "other",
+            ]),
+          )
           .max(6)
           .optional(),
         treatmentStage: z.string().max(120).optional(),
@@ -130,7 +171,9 @@ const optionalCommon = z
       .optional(),
     bodyMeasurements: z
       .object({
-        bloodGroup: z.enum(["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "unknown"]).optional(),
+        bloodGroup: z
+          .enum(["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "unknown"])
+          .optional(),
         targetWeightKg: z.number().min(2).max(400).optional(),
         waistNavelCm: z.number().min(20).max(250).optional(),
         waistThinnestCm: z.number().min(20).max(250).optional(),
@@ -156,11 +199,14 @@ const optionalCommon = z
         constipationRating: ratingSchema.optional(),
         dailyRituals: z.array(z.string().max(60)).max(10).optional(),
         lunchDuration: z.enum(["under_10", "10_20", "over_20"]).optional(),
+        ibs: z.boolean().optional(),
       })
       .optional(),
     foodPattern: z
       .object({
-        dietType: z.enum(["veg", "non_veg", "eggetarian", "vegan", "jain", "pescatarian"]).optional(),
+        dietType: z
+          .enum(["veg", "non_veg", "eggetarian", "vegan", "jain", "pescatarian"])
+          .optional(),
         cuisines: z.array(z.string().max(40)).max(15).optional(),
         mealsPerDay: z.number().int().min(1).max(8).optional(),
         eatsOutPerWeek: z.number().int().min(0).max(21).optional(),
@@ -177,7 +223,8 @@ const optionalCommon = z
         foodLikes: z.string().max(200).optional(),
         foodDislikes: z.string().max(200).optional(),
         cravings: z.string().max(200).optional(),
-        eatingSpeed: z.enum(["slow", "moderate", "fast"]).optional(),
+        // slow/moderate/fast = older submissions; quick_10_15/slow_20_plus = current form
+        eatingSpeed: z.enum(["slow", "moderate", "fast", "quick_10_15", "slow_20_plus"]).optional(),
         bingeEating: z.enum(["no", "occasionally", "frequently"]).optional(),
         dailyMeals: z
           .object({
@@ -189,6 +236,17 @@ const optionalCommon = z
             postDinner: mealSlot.optional(),
           })
           .optional(),
+        // 24 hr diet recall (replaces dailyMeals in the current form)
+        dietRecall: z
+          .array(
+            z.object({
+              slot: z.string().max(40),
+              time: z.string().max(10).optional(),
+              food: z.string().max(400).optional(),
+            }),
+          )
+          .max(12)
+          .optional(),
       })
       .optional(),
     lifestyleDepth: z
@@ -196,14 +254,35 @@ const optionalCommon = z
         stress: ratingSchema.optional(),
         stressSource: z.enum(["work", "family", "health", "financial", "multiple"]).optional(),
         screenTimeHrs: z.number().min(0).max(24).optional(),
-        smoking: z.object({ active: z.boolean(), frequency: z.string().max(40).optional() }).optional(),
-        alcohol: z.object({ active: z.boolean(), frequency: z.string().max(40).optional(), drinksPerSession: z.string().max(40).optional() }).optional(),
+        smoking: z
+          .object({ active: z.boolean(), frequency: z.string().max(40).optional() })
+          .optional(),
+        alcohol: z
+          .object({
+            active: z.boolean(),
+            frequency: z.string().max(40).optional(),
+            drinksPerSession: z.string().max(40).optional(),
+          })
+          .optional(),
         shiftWork: z.boolean().optional(),
         travelFrequency: z.string().max(40).optional(),
         sleepTime: z.string().max(10).optional(),
         wakeTime: z.string().max(10).optional(),
         dailySteps: z.number().int().min(0).max(100000).optional(),
-        exerciseType: z.string().max(120).optional(),
+        // free text — older submissions; current form sends exercises
+        exerciseType: z.string().max(400).optional(),
+        // "What form of exercise do you do?" table from the BTP assessment form.
+        exercises: z
+          .array(
+            z.object({
+              type: z.string().max(80),
+              durationMin: z.number().int().min(0).max(600).optional(),
+              timesPerWeek: z.number().int().min(0).max(21).optional(),
+              timing: z.string().max(10).optional(),
+            }),
+          )
+          .max(6)
+          .optional(),
         exerciseDuration: z.enum(["none", "15_30", "30_45", "45_60", "60_plus"]).optional(),
         exerciseFrequency: z.enum(["daily", "4_5_wk", "2_3_wk", "rarely"]).optional(),
         wellnessRituals: z.array(z.string().max(60)).max(10).optional(),
@@ -220,6 +299,8 @@ const optionalCommon = z
       })
       .optional(),
     notes: z.string().max(240).optional(),
+    reportsSharing: z.enum(["email", "whatsapp", "none"]).optional(),
+    specialRequest: z.string().max(500).optional(),
   })
   .partial();
 
@@ -229,7 +310,10 @@ const femaleOptional = z
     periodsStatus: z.enum(["regular", "irregular", "absent", "menopausal"]).optional(),
     lastPeriodDate: z.string().date().optional(),
     cycleLengthDays: z.number().int().min(10).max(90).optional(),
-    flow: z.array(z.enum(["light", "moderate", "heavy", "very_heavy", "clots"])).max(5).optional(),
+    flow: z
+      .array(z.enum(["light", "moderate", "heavy", "very_heavy", "clots"]))
+      .max(5)
+      .optional(),
     periodDays: z.number().int().min(1).max(15).optional(),
     pmsSymptoms: z.array(z.string().max(40)).max(15).optional(),
     painSeverity: ratingSchema.optional(),
@@ -243,7 +327,10 @@ const femaleOptional = z
     hormonalIntervention: z
       .object({
         active: z.boolean(),
-        types: z.array(z.enum(["ocp", "hormonal_iud", "hrt", "fertility_meds", "none"])).max(5).optional(),
+        types: z
+          .array(z.enum(["ocp", "hormonal_iud", "hrt", "fertility_meds", "none"]))
+          .max(5)
+          .optional(),
       })
       .optional(),
     pregnancy: z
@@ -282,7 +369,9 @@ const femaleOptional = z
 const maleOptional = z
   .object({
     urinarySymptoms: z
-      .array(z.enum(["frequency", "urgency", "hesitancy", "nocturia", "incomplete_emptying", "none"]))
+      .array(
+        z.enum(["frequency", "urgency", "hesitancy", "nocturia", "incomplete_emptying", "none"]),
+      )
       .max(6)
       .optional(),
     libido: ratingSchema.optional(),
@@ -323,11 +412,16 @@ const childOptional = z
     appetite: z.enum(["poor", "variable", "good", "very_good", "excessive"]).optional(),
     pickyEater: ratingSchema.optional(),
     sportsPerWeek: z.number().int().min(0).max(21).optional(),
-    sportsTiming: z.array(z.enum(["morning", "afternoon", "evening"])).max(3).optional(),
+    sportsTiming: z
+      .array(z.enum(["morning", "afternoon", "evening"]))
+      .max(3)
+      .optional(),
     outdoorSports: z.array(z.string().max(40)).max(15).optional(),
     indoorSports: z.array(z.string().max(40)).max(15).optional(),
     screenTimeHrs: z.number().min(0).max(24).optional(),
-    packagedFoodFrequency: z.enum(["rarely", "1-2_wk", "3-5_wk", "daily", "multi_daily"]).optional(),
+    packagedFoodFrequency: z
+      .enum(["rarely", "1-2_wk", "3-5_wk", "daily", "multi_daily"])
+      .optional(),
     memory: ratingSchema.optional(),
     growthConcerns: z.array(z.string().max(40)).max(10).optional(),
     feedingConcerns: z.array(z.string().max(60)).max(10).optional(),
@@ -345,15 +439,20 @@ const guardianBlock = z.object({
 
 const adultContact = z
   .object({
+    // Both required in the current form; optional here so the refine below
+    // still gives one clear message.
     phone: phoneSchema.optional(),
     email: emailSchema.optional(),
+    // "other" submits on the male branch (no gender-specific sections), so the
+    // PMS / DB branch values stay female | male | child.
+    gender: z.enum(["female", "male", "other"]).optional(),
     profession: z.string().max(120).optional(),
     maritalStatus: z.enum(["single", "married", "divorced", "widowed"]).optional(),
     childrenCount: z.enum(["none", "1", "2", "3+"]).optional(),
     referredBy: z.string().max(120).optional(),
   })
-  .refine((v) => Boolean(v.phone || v.email), {
-    message: "Provide a phone number or email",
+  .refine((v) => Boolean(v.phone && v.email), {
+    message: "Provide both phone number and email",
     path: ["phone"],
   });
 
