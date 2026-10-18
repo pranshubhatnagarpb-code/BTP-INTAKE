@@ -3,8 +3,9 @@ import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
 
-const SITE_URL = "https://intake.bouncethepound.com";
-const OG_IMAGE_URL = `${SITE_URL}/og-image.png`;
+// Link previews (WhatsApp etc.) need absolute URLs on the live domain.
+const SITE_URL = "https://intake.bouncethepound.in";
+const OG_IMAGE_URL = `${SITE_URL}/og-image.jpg`;
 
 function NotFoundComponent() {
   return (
@@ -42,8 +43,10 @@ export const Route = createRootRoute({
       { property: "og:url", content: SITE_URL },
       { property: "og:site_name", content: "Bounce The Pound" },
       { property: "og:image", content: OG_IMAGE_URL },
-      { property: "og:image:width", content: "350" },
-      { property: "og:image:height", content: "148" },
+      { property: "og:image:secure_url", content: OG_IMAGE_URL },
+      { property: "og:image:type", content: "image/jpeg" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
       { property: "og:image:alt", content: "Bounce The Pound - Assessment Form" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Bounce The Pound - Assessment Form" },
