@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { submissionSchema, type SubmissionInput } from "@/lib/intake/schema";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { supabaseAdmin, serviceKeyConfigured } from "@/integrations/supabase/client.server";
 
 export type SubmitIntakeResult = {
   submissionId: string;
@@ -129,6 +129,9 @@ export const submitIntake = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => submissionSchema.parse(input))
   .handler(async ({ data }): Promise<SubmitIntakeResult> => {
     const input: SubmissionInput = data;
+    if (!serviceKeyConfigured) {
+      throw new Error("The form can't save right now (server key not configured). Please contact the clinic.");
+    }
 
     // 1) Insert audit row
     const insertRow = {
